@@ -1,3 +1,7 @@
+*~
+build/
+bin/
+
 # Object files
 *.o
 *.ko
