@@ -53,9 +53,18 @@ static int run_test() {
 	int fd = open(tmp_path, O_RDONLY);
 
 	struct stat st;
-	(void)fstat(fd, &st);
+	if (fstat(fd, &st)) {
+		(void)fprintf(stderr, "Could not fstat" NL);
+		return 1;
+	}
 
 	void *map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (map == MAP_FAILED) {
+		(void)fprintf(stderr, "mmap failed" NL);
+		(void)fprintf(stderr, "st_size = %zu ; fd = %u" NL, (size_t)st.st_size, fd);
+		return 1;
+	}
+	__DEBUG_PRINTF("mmap %p" NL, map);
 
 	struct thread_arguments args = { .map = map, .str = strdup(file_content) };
 
