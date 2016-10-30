@@ -9,7 +9,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <sys/mman.h>
 #include <string.h>
 
 #define ITERATIONS 100000000
