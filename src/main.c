@@ -83,15 +83,16 @@ static int run_test() {
 
 	struct thread_arguments args = { .map = map, .str = strdup(file_content) };
 
-	pthread_t pth1, pth2;
+	/* start threads */
+	pthread_t th_advise, th_write, th_poll;
 
 	(void)printf("Racing..." NL);
-	(void)pthread_create(&pth1, NULL, madvise_thread, (void *)&args);
-	(void)pthread_create(&pth2, NULL, memwrite_thread, (void *)&args);
+	(void)pthread_create(&th_advise, NULL, madvise_thread, (void *)&args);
+	(void)pthread_create(&th_write, NULL, memwrite_thread, (void *)&args);
 
 	/* wait for threads to finish */
-	(void)pthread_join(pth1, NULL);
-	(void)pthread_join(pth2, NULL);
+	(void)pthread_join(th_advise, NULL);
+	(void)pthread_join(th_write, NULL);
 
 	return 0;
 }
