@@ -76,14 +76,15 @@ static int run_test() {
 	fd = open(filepath, O_RDONLY);
 	struct stat st;
 	if (fstat(fd, &st)) {
-		(void)fprintf(stderr, "Could not fstat" NL);
+		(void)perror("run: fstat()");
 		return 1;
 	}
 
 	void *map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (map == MAP_FAILED) {
-		(void)fprintf(stderr, "mmap failed" NL);
-		(void)fprintf(stderr, "st_size = %zu ; fd = %u" NL, (size_t)st.st_size, fd);
+		(void)perror("run: mmap()");
+		(void)fprintf(stderr, "st_size = %zu ; fd = %u" NL,
+					  (size_t)st.st_size, fd);
 		return 1;
 	}
 	__DEBUG_PRINTF("mmap %p" NL, map);
