@@ -42,7 +42,6 @@ $(TESTER_FILE):
 
 test: $(TARGET_EXEC) $(TESTER_FILE)
 	"$(TARGET_EXEC)"
-	cat "$(TESTER_FILE)"
 	su -c "rm \"$(TESTER_FILE)\""
 
 clean:

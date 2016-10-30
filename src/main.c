@@ -1,5 +1,6 @@
 #include "prefix.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -69,7 +70,10 @@ static void *memwrite_thread(void *arg) {
 }
 
 static int run_test() {
+	bool vulnerable = false;
 	int fd = -1;
+	char *buf = NULL;
+
 	const char *filepath = __TESTER_FILE__;
 	(void)printf("Using file '%s' for testing..." NL, filepath);
 
@@ -107,7 +111,41 @@ static int run_test() {
 	(void)pthread_join(th_advise, NULL);
 	(void)pthread_join(th_write, NULL);
 
-	return 0;
+	(void)printf("Racing done." NL);
+
+	/* check vulnerability */
+	size_t slen = strlen(args.str);
+	buf = (char *)calloc((slen + 1), sizeof(char));
+
+	/* seek to the beginning of the file to read its contents */
+	if (lseek(fd, 0, SEEK_SET)) {
+		(void)perror("run: lseek()");
+		goto fail;
+	}
+
+	if (slen == read(fd, buf, slen)
+		&& !strncmp(args.str, buf, slen)) {
+		/* vulnerable */
+		vulnerable = true;
+
+		(void)printf("Your system is vulnerable!" NL);
+		(void)printf("If you think this is wrong, restart your system "
+					 "to ensure that an updated kernel gets active." NL);
+	} else {
+		/* not vulnerable */
+		vulnerable = false;
+
+		(void)printf("Your system appears to be safe!" NL);
+		(void)printf("Instead of the expected '%s' we read:" NL, args.str);
+		(void)printf("%s" NL, buf);
+	}
+
+	(void)free(buf);
+	if (fd >= 0 && close(fd)) {
+		(void)perror("run: close()");
+	}
+
+	return (vulnerable ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 int main(int argc, char *argv[]) {
