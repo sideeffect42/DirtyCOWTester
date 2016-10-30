@@ -15,6 +15,12 @@
 #define ITERATIONS 100000000
 #define DEBUG_ITER_PRINT_IVAL 10000000
 
+#define __PRINT_ITERATION(it, strl)					\
+	if (0 == (it % DEBUG_ITER_PRINT_IVAL)) {			\
+		__DEBUG_PRINTF(strl " iteration %u" NL, it);	\
+	}
+
+
 static const char *file_content = "VULNERABLE!" NL;
 
 struct thread_arguments {
@@ -32,9 +38,7 @@ static void *madvise_thread(void *arg) {
 
 	int i, c = 0;
 	for (i = 0; args->cont && i < ITERATIONS; ++i) {
-		if (0 == (i % DEBUG_ITER_PRINT_IVAL)) {
-			__DEBUG_PRINTF("madvise thread iteration %u" NL, i);
-		}
+		__PRINT_ITERATION(i, "madvise thread");
 
 		c += madvise(map, 100, MADV_DONTNEED);
 	}
@@ -60,9 +64,7 @@ static void *memwrite_thread(void *arg) {
 	}
 
 	for (i = 0; args->cont && i < ITERATIONS; ++i) {
-		if (0 == (i % DEBUG_ITER_PRINT_IVAL)) {
-			__DEBUG_PRINTF("memwrite thread iteration %u" NL, i);
-		}
+		__PRINT_ITERATION(i, "memwrite thread")
 
 		if (map == lseek(fd, map, SEEK_SET)) {
 			c += write(fd, str, len);
