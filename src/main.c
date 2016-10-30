@@ -29,6 +29,59 @@ struct thread_arguments {
 	const char * const str;
 };
 
+static void *poll_thread(void *arg) {
+	__DEBUG_PRINTF("poll_thread called" NL);
+
+	int fd = -1;
+	char *buf = NULL;
+	struct thread_arguments *args = (struct thread_arguments *)arg;
+
+	size_t slen = strlen(args->str);
+
+	if ((fd = open(args->path, O_RDONLY)) < 0) {
+		(void)perror("poll: open()");
+		goto fail;
+	}
+
+	if (!(buf = (char *)calloc((slen + 1), sizeof(char)))) {
+		(void)perror("poll: calloc()");
+		goto fail;
+	}
+
+	while (args->cont) {
+		(void)sleep(1);
+		__DEBUG_PRINTF("Polling..." NL);
+
+		if (lseek(fd, 0, SEEK_SET)) {
+			/* lseek failed */
+			if (errno) {
+				(void)perror("write: lseek()");
+			} else {
+				(void)fprintf(stderr, "write: did not seek to correct"
+							  "position, but no error code was given" NL);
+			}
+			continue;
+		}
+
+		if (slen == read(fd, buf, slen)
+			&& !strncmp(args->str, buf, slen)) {
+			/* we read what we wanted -> done */
+			__DEBUG_PRINTF("Read file contents: '%s'" NL, buf);
+			args->cont = false;
+
+			goto cleanup;
+		}
+	}
+
+  fail:
+  cleanup:
+	(void)free(buf);
+	if (fd >= 0 && close(fd)) {
+		(void)perror("poll: close()");
+	}
+	return NULL;
+}
+
 static void *madvise_thread(void *arg) {
 	__DEBUG_PRINTF("madvise_thread called" NL);
 
@@ -131,10 +184,12 @@ static int run_test() {
 	(void)printf("Racing..." NL);
 	(void)pthread_create(&th_advise, NULL, madvise_thread, (void *)&args);
 	(void)pthread_create(&th_write, NULL, memwrite_thread, (void *)&args);
+	(void)pthread_create(&th_poll, NULL, poll_thread, (void *)&args);
 
 	/* wait for threads to finish */
 	(void)pthread_join(th_advise, NULL);
 	(void)pthread_join(th_write, NULL);
+	(void)pthread_cancel(th_poll);
 
 	(void)printf("Racing done." NL);
 
