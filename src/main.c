@@ -13,6 +13,7 @@
 
 #define ITERATIONS 100000000
 #define DEBUG_ITER_PRINT_IVAL 10000000
+#define POLL_IVAL 5
 
 #define __PRINT_ITERATION(it, strl)					\
 	if (0 == (it % DEBUG_ITER_PRINT_IVAL)) {			\
@@ -49,7 +50,7 @@ static void *poll_thread(void *arg) {
 	}
 
 	while (args->cont) {
-		(void)sleep(1);
+		(void)sleep(POLL_IVAL);
 		__DEBUG_PRINTF("Polling..." NL);
 
 		if (lseek(fd, 0, SEEK_SET)) {
