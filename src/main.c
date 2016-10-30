@@ -53,12 +53,12 @@ static void *memwrite_thread(void *arg) {
 	__DEBUG_PRINTF("memwrite_thread called" NL);
 
 	struct thread_arguments *args = (struct thread_arguments *)arg;
+	int fd = -1, i, c = 0;
 	off_t map = (off_t)args->map;
 	const char *str = args->str;
 	size_t len = strlen(str);
 
-	int i, c = 0, fd = open("/proc/self/mem", O_RDWR);
-	if (fd < 0) {
+	if ((fd = open("/proc/self/mem", O_RDWR)) < 0) {
 		(void)perror("write: open()");
 		goto fail;
 	}
@@ -92,29 +92,31 @@ static int run_test() {
 	bool vulnerable = false;
 	int fd = -1;
 	char *buf = NULL;
+	void *map = NULL;
+	struct stat st;
 
 	const char *filepath = __TESTER_FILE__;
 	(void)printf("Using file '%s' for testing..." NL, filepath);
 
-	fd = open(filepath, O_RDONLY);
-	if (fd < 0) {
+	if ((fd = open(filepath, O_RDONLY)) < 0) {
 		(void)perror("run: open()");
 		goto fail;
 	}
 
-	struct stat st;
 	if (fstat(fd, &st)) {
 		(void)perror("run: fstat()");
 		goto fail;
 	}
 
-	void *map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-	if (map == MAP_FAILED) {
+	if (MAP_FAILED == (map = mmap(NULL, st.st_size, PROT_READ,
+								  MAP_PRIVATE, fd, 0))) {
+
 		(void)perror("run: mmap()");
 		(void)fprintf(stderr, "st_size = %zu ; fd = %u" NL,
 					  (size_t)st.st_size, fd);
 		goto fail;
 	}
+
 	__DEBUG_PRINTF("mmap %p" NL, map);
 
 	struct thread_arguments args = {
@@ -169,6 +171,10 @@ static int run_test() {
 	(void)free(buf);
 	if (fd >= 0 && close(fd)) {
 		(void)perror("run: close()");
+	}
+
+	if (map && munmap(map, st.st_size)) {
+		(void)perror("run: munmap()");
 	}
 
 	return (vulnerable ? EXIT_SUCCESS : EXIT_FAILURE);
