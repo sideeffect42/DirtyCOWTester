@@ -62,9 +62,11 @@ static void *memwrite_thread(void *arg) {
 }
 
 static int run_test() {
-	char *tmp_path = "/tmp/dirtycow_test";
-	int fd = open(tmp_path, O_RDONLY);
+	int fd = -1;
+	const char *filepath = __TESTER_FILE__;
+	(void)printf("Using file '%s' for testing..." NL, filepath);
 
+	fd = open(filepath, O_RDONLY);
 	struct stat st;
 	if (fstat(fd, &st)) {
 		(void)fprintf(stderr, "Could not fstat" NL);
