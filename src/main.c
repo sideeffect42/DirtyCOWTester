@@ -210,8 +210,8 @@ static int run_test(const char *filepath) {
 		vulnerable = true;
 
 		(void)printf("Your system is vulnerable!" NL);
-		(void)printf("If you think this is wrong, restart your system "
-					 "to ensure that an updated kernel gets active." NL);
+		(void)printf("If you think this is wrong, restart your system to" NL
+					 "ensure that an updated kernel gets active." NL);
 	} else {
 		/* not vulnerable */
 		vulnerable = false;
