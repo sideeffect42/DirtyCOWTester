@@ -12,7 +12,7 @@
 #include <string.h>
 
 #define ITERATIONS 100000000
-#define DEBUG_ITER_PRINT_IVAL 10000000
+#define DEBUG_ITER_PRINT_IVAL 5000000
 #define POLL_IVAL 5
 
 #define __PRINT_ITERATION(it, strl)					\
