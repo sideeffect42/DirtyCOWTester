@@ -141,14 +141,13 @@ static void *memwrite_thread(void *arg) {
 	return NULL;
 }
 
-static int run_test() {
+static int run_test(const char *filepath) {
 	bool vulnerable = false;
 	int fd = -1;
 	char *buf = NULL;
 	void *map = NULL;
 	struct stat st;
 
-	const char *filepath = __TESTER_FILE__;
 	(void)printf("Using file '%s' for testing..." NL, filepath);
 
 	if ((fd = open(filepath, O_RDONLY)) < 0) {
@@ -240,5 +239,7 @@ static int run_test() {
 }
 
 int main(int argc, char *argv[]) {
-	return run_test();
+	char *filepath = "/tmp/dirtycow_test";
+
+	return run_test(filepath);
 }

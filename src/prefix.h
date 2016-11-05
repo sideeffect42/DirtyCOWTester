@@ -17,5 +17,4 @@ typedef signed char bool;
 #define __DEBUG__ 0
 #endif
 
-#define __TESTER_FILE__ "/tmp/dirtycow_test"
 #endif
