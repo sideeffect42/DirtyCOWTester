@@ -286,8 +286,6 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	(void)printf("Using file '%s'..." NL, filepath);
-
 	/* Prepare environment */
 	int fd;
 	if (no_root) {
