@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <getopt.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -240,6 +241,34 @@ static int run_test(const char *filepath) {
 
 int main(int argc, char *argv[]) {
 	char *filepath = "/tmp/dirtycow_test";
+
+	/* Parse arguments */
+	{
+		static struct option long_options[] = {
+			{ "help", no_argument, NULL, 'h' },
+		};
+
+		extern char *optarg;
+		extern int opterr, optopt;
+
+		int c = -1;
+		while (-1 != (c = getopt_long(
+					argc, argv, "h", long_options, NULL))) {
+			switch (c) {
+			case 'h':
+				(void)printf("Dirty COW Tester:" NL NL
+							 "This application exploits a kernel exploit on "
+							 "your GNU/Linux system." NL
+							 "Use on your own risk!" NL NL
+							 "Options: " NL
+							 "  --help        Print this help." NL
+					);
+				return EXIT_SUCCESS;
+			}
+		}
+	}
+
+	(void)printf("Using file '%s'..." NL, filepath);
 
 	return run_test(filepath);
 }
