@@ -300,7 +300,10 @@ int main(int argc, char *argv[]) {
 		}
 
 		/* create file */
-		fd = creat(filepath, O_RDWR);
+		if (0 > (fd = creat(filepath, O_RDWR))) {
+			(void)perror("creat()");
+			return EXIT_FAILURE;
+		}
 
 		/* write _ chars to file (we want to overwrite those) */
 		size_t slen = strlen(file_content);
