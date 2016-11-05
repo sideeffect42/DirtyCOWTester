@@ -117,7 +117,7 @@ static void *memwrite_thread(void *arg) {
 	}
 
 	for (i = 0; args->cont && i < ITERATIONS; ++i) {
-		__PRINT_ITERATION(i, "memwrite thread")
+		__PRINT_ITERATION(i, "memwrite thread");
 
 		if (map == lseek(fd, map, SEEK_SET)) {
 			c += write(fd, str, len);
