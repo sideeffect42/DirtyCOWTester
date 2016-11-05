@@ -22,7 +22,7 @@
 	}
 
 
-static const char *file_content = "VULNERABLE!" NL;
+static const char *file_content = "VULNERABLE!";
 
 struct thread_arguments {
 	bool cont;
