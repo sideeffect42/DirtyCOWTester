@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
 			}
 		} else {
 			/* file does not exist */
-			(void)perror("fopen()");
+			(void)perror("open()");
 			return EXIT_FAILURE;
 		}
 	}
