@@ -253,14 +253,21 @@ int main(int argc, char *argv[]) {
 
 		int c = -1;
 		while (-1 != (c = getopt_long(
-					argc, argv, "h", long_options, NULL))) {
+					argc, argv, "f:h", long_options, NULL))) {
 			switch (c) {
+			case 'f':
+				filepath = optarg;
+				break;
 			case 'h':
 				(void)printf("Dirty COW Tester:" NL NL
 							 "This application exploits a kernel exploit on "
 							 "your GNU/Linux system." NL
 							 "Use on your own risk!" NL NL
 							 "Options: " NL
+							 "  -f            Path to a file." NL
+							 "                This file will be written to. " NL
+							 "                The file must exist and be " NL
+							 "                read-only for the current user." NL
 							 "  --help        Print this help." NL
 					);
 				return EXIT_SUCCESS;
