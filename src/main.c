@@ -182,7 +182,9 @@ static int run_test(const char *filepath) {
 	/* start threads */
 	pthread_t th_advise, th_write, th_poll;
 
-	(void)printf("Racing..." NL);
+	(void)printf("Racing..." NL
+				 "This might take some time." NL NL);
+
 	(void)pthread_create(&th_advise, NULL, madvise_thread, (void *)&args);
 	(void)pthread_create(&th_write, NULL, memwrite_thread, (void *)&args);
 	(void)pthread_create(&th_poll, NULL, poll_thread, (void *)&args);
@@ -192,7 +194,7 @@ static int run_test(const char *filepath) {
 	(void)pthread_join(th_write, NULL);
 	(void)pthread_cancel(th_poll);
 
-	(void)printf("Racing done." NL);
+	(void)printf("Racing done." NL NL);
 
 	/* check vulnerability */
 	size_t slen = strlen(args.str);
