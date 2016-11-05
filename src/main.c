@@ -240,11 +240,13 @@ static int run_test(const char *filepath) {
 }
 
 int main(int argc, char *argv[]) {
+	bool no_root = false;
 	char *filepath = "/tmp/dirtycow_test";
 
 	/* Parse arguments */
 	{
 		static struct option long_options[] = {
+			{ "no-root", no_argument, NULL, 'n' },
 			{ "help", no_argument, NULL, 'h' },
 		};
 
@@ -258,6 +260,9 @@ int main(int argc, char *argv[]) {
 			case 'f':
 				filepath = optarg;
 				break;
+			case 'n':
+				no_root = true;
+				break;
 			case 'h':
 				(void)printf("Dirty COW Tester:" NL NL
 							 "This application exploits a kernel exploit on "
@@ -266,8 +271,14 @@ int main(int argc, char *argv[]) {
 							 "Options: " NL
 							 "  -f            Path to a file." NL
 							 "                This file will be written to. " NL
-							 "                The file must exist and be " NL
+							 "                Unless --no-root is specified, "
+							 "the file must exist and be " NL
 							 "                read-only for the current user." NL
+							 "  --no-root     The application will create a "
+							 "read-only file on it's own." NL
+							 "                So no privilege escalation will "
+							 "be performed, but the test" NL
+							 "                might not be 100%% accurate." NL
 							 "  --help        Print this help." NL
 					);
 				return EXIT_SUCCESS;
@@ -276,6 +287,67 @@ int main(int argc, char *argv[]) {
 	}
 
 	(void)printf("Using file '%s'..." NL, filepath);
+
+	/* Prepare environment */
+	int fd;
+	if (no_root) {
+		/* create file and make it non-writeable */
+		if (0 <= (fd = open(filepath, O_RDONLY))) {
+			(void)close(fd);
+			(void)fprintf(stderr, "File '%s' already exists. "
+					"Please choose a different one." NL, filepath);
+			return EXIT_FAILURE;
+		}
+
+		/* create file */
+		fd = creat(filepath, O_RDWR);
+
+		/* write _ chars to file (we want to overwrite those) */
+		size_t slen = strlen(file_content);
+		char *underscores = (char *)malloc(slen);
+		(void)memset(underscores, '_', slen);
+
+		if (slen != write(fd, underscores, slen)) {
+			(void)perror("write()");
+			return EXIT_FAILURE;
+		}
+
+		if (fchmod(fd, S_IRUSR)) {
+			(void)perror("fchmod()");
+			return EXIT_FAILURE;
+		}
+
+		if (close(fd)) {
+			(void)perror("close()");
+			return EXIT_FAILURE;
+		}
+	} else {
+		/* check if file exists and is non-writable */
+		if (0 <= (fd = open(filepath, O_RDONLY))) {
+			if (close(fd)) {
+				(void)perror("close(r)");
+				return EXIT_FAILURE;
+			}
+
+			if (0 <= (fd = open(filepath, O_RDWR))) {
+				/* is writable? */
+				if (!write(fd, "", 0)) {
+					(void)fprintf(stderr, "File is writable." NL);
+					(void)close(fd);
+					return EXIT_FAILURE;
+				}
+
+				if (close(fd)) {
+					(void)perror("close(w)");
+					return EXIT_FAILURE;
+				}
+			}
+		} else {
+			/* file does not exist */
+			(void)perror("fopen()");
+			return EXIT_FAILURE;
+		}
+	}
 
 	return run_test(filepath);
 }
