@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/ptrace.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
@@ -139,6 +140,33 @@ static void *memwrite_thread(void *arg) {
 	}
 
 	__DEBUG_PRINTF("memwrite %d" NL, c);
+	return NULL;
+}
+
+static void *ptrace_thread(void *arg) {
+	__DEBUG_PRINTF("ptrace_thtread called" NL);
+
+	struct thread_arguments *args = (struct thread_arguments *)arg;
+	int i, o, u, r, c = 0;
+	void *map = args->map;
+	const char *str = args->str;
+	size_t len = strlen(str);
+	pid_t pid = getpid();
+
+	for (i = 0, r = (ITERATIONS / len / 10000); args->cont && i < r; ++i) {
+		__PRINT_ITERATION(i, "ptrace thread");
+
+		for (o = 0; o < len; ++o) {
+			for (u = 0; u < 10000; ++u) {
+				c += ptrace(PTRACE_POKETEXT,
+							pid,
+							(map + o),
+							*((long *)(str + o))
+					);
+			}
+		}
+	}
+
 	return NULL;
 }
 
